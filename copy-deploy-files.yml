@@ -1,0 +1,35 @@
+name: Copy GitHub Pages files
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - default
+  workflow_dispatch:
+
+jobs:
+  copy-files:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Create Deploy Directory
+      run: mkdir -p deploy
+      
+    - name: Copy Files
+      run: |
+        cp -r github-pages/* deploy/
+        cp -r github-pages/.nojekyll deploy/ 2>/dev/null || :
+        cp staticwebapp.config.json deploy/
+        
+    - name: Create .nojekyll
+      run: touch deploy/.nojekyll
+      
+    - name: Deploy to GitHub Pages
+      uses: JamesIves/github-pages-deploy-action@v4
+      with:
+        folder: deploy
+        branch: gh-pages
+        clean: true

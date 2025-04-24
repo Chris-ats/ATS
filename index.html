@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR-Code Scanner - GitHub Pages Version</title>
+    <!-- QR Code Library direkt eingebunden -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+    <h1>QR-Code Scanner</h1>
+
+    <!-- Scanner-Bereich -->
+    <div class="card">
+        <div id="scanner-container">
+            <video id="scanner-video" autoplay playsinline></video>
+            <div id="scanner-overlay" style="display: none;">Scanner wird geladen...</div>
+        </div>
+
+        <div class="scanner-controls">
+            <button id="start-scan-btn" class="primary">Kamera aktivieren</button>
+            <div class="file-upload">
+                <button class="secondary">Bild hochladen</button>
+                <input type="file" id="file-input" accept="image/*">
+            </div>
+        </div>
+    </div>
+
+    <!-- Aktueller Scan-Gruppe -->
+    <div id="current-group" class="card">
+        <div class="flex-between mb-4">
+            <h2>Aktueller Trupp</h2>
+            <div class="flex items-center">
+                <span class="text-sm font-medium text-gray-700 mr-2">
+                    <span id="current-scan-count">0</span>/3 gescannt
+                </span>
+                <div class="scan-indicator">
+                    <span id="dot-1" class="scan-dot scan-dot-empty"></span>
+                    <span id="dot-2" class="scan-dot scan-dot-empty"></span>
+                    <span id="dot-3" class="scan-dot scan-dot-empty"></span>
+                </div>
+            </div>
+        </div>
+
+        <div id="current-scans" class="mb-4">
+            <!-- Aktuelle Scans werden hier eingefügt -->
+        </div>
+
+        <button id="add-manual-scan" class="w-full mb-4" style="background: none; border: 2px dashed #cbd5e0; color: #718096; padding: 10px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline; margin-right: 8px; vertical-align: middle;">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <line x1="19" y1="8" x2="19" y2="14"></line>
+                <line x1="16" y1="11" x2="22" y2="11"></line>
+            </svg>
+            Teilnehmer manuell hinzufügen
+        </button>
+
+        <div class="flex flex-wrap gap-3 justify-center">
+            <button id="complete-group-btn" class="success" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline; margin-right: 4px; vertical-align: middle;">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                Trupp abschließen
+            </button>
+            
+            <button id="clear-scans-btn" class="secondary" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline; margin-right: 4px; vertical-align: middle;">
+                    <polyline points="1 4 1 10 7 10"></polyline>
+                    <polyline points="23 20 23 14 17 14"></polyline>
+                    <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
+                </svg>
+                Zurücksetzen
+            </button>
+        </div>
+    </div>
+
+    <!-- Notfall-Anzeige -->
+    <div id="emergency-alert" class="emergency-alert" style="display: none;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline; margin-right: 8px; vertical-align: middle;">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        ATEMSCHUTZNOTFALL
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline; margin-left: 8px; vertical-align: middle;">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+    </div>
+
+    <!-- Abgeschlossene Gruppen -->
+    <div id="completed-groups-container" style="display: none;">
+        <h2>Überwachte Trupps</h2>
+        <div id="completed-groups">
+            <!-- Abgeschlossene Gruppen werden hier eingefügt -->
+        </div>
+    </div>
+
+    <!-- Dialoge -->
+    <!-- Manuelles Scan-Dialog -->
+    <div id="manual-scan-dialog" class="dialog-backdrop" style="display: none;">
+        <div class="dialog">
+            <div class="dialog-header">
+                <h3 class="dialog-title">Teilnehmer manuell hinzufügen</h3>
+            </div>
+            <div class="dialog-body">
+                <div class="mb-3">
+                    <label for="manual-scan-input" class="block text-sm font-medium text-gray-700 mb-2">
+                        Teilnehmerinformationen eingeben:
+                    </label>
+                    <input type="text" id="manual-scan-input" placeholder="Name, Nummer, Trupp, etc.">
+                </div>
+                <p class="text-xs text-gray-500">
+                    Geben Sie die Informationen des Teilnehmers ein, wie wenn Sie ihn gescannt hätten.
+                </p>
+            </div>
+            <div class="dialog-footer">
+                <button id="cancel-manual-scan" class="secondary">Abbrechen</button>
+                <button id="confirm-manual-scan" class="primary">Hinzufügen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gruppenname Bearbeiten Dialog -->
+    <div id="edit-name-dialog" class="dialog-backdrop" style="display: none;">
+        <div class="dialog">
+            <div class="dialog-header">
+                <h3 class="dialog-title">Gruppenname bearbeiten</h3>
+            </div>
+            <div class="dialog-body">
+                <div class="mb-3">
+                    <label for="group-name-input" class="block text-sm font-medium text-gray-700 mb-2">
+                        Neuer Gruppenname:
+                    </label>
+                    <input type="text" id="group-name-input" placeholder="Trupp 1, Team Alpha, etc.">
+                    <input type="hidden" id="edit-group-id">
+                </div>
+            </div>
+            <div class="dialog-footer">
+                <button id="cancel-edit-name" class="secondary">Abbrechen</button>
+                <button id="confirm-edit-name" class="primary">Speichern</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio-Elemente für Benachrichtigungen -->
+    <audio id="scan-sound" preload="auto">
+        <source src="static/media/scan-sound.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="emergency-sound" preload="auto" loop>
+        <source src="static/media/emergency-sound.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- HTML2PDF -->
+    <script src="html2pdf.min.js"></script>
+    
+    <!-- JavaScript -->
+    <script src="static/js/script.js"></script>
+</body>
+</html>
